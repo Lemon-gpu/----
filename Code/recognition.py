@@ -90,7 +90,7 @@ def train(dataloader: data.DataLoader, model: nn.Module, loss_fn, optimizer: tor
     
     model.eval() # 将当前model恢复为测试模式
 
-def training_driver(image_dir: str, annotations_file_path: str, label_count: int, image_size: int = 2700, epoch: int = 1) -> nn.Module: # 训练主函数
+def training_driver(image_dir: str, annotations_file_path: str, label_count: int, image_size: int = 2700, epoch: int = 10) -> nn.Module: # 训练主函数
     # 初始化数据集
     dataset = image_dataset(image_dir, annotations_file_path)
     # 初始化数据集的迭代器
