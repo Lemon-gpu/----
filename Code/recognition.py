@@ -24,42 +24,38 @@ def classify_image(images: list) -> list[list, list, list]:
     ads = [image[2: len(image)]]
     return [provinces, alphabets, ads]
 
-
-class CustomImageDataset(data.Dataset):
-    def __init__(self, annotations_file, img_dir, transform=None, target_transform=None):
-        self.img_labels = pd.read_csv(annotations_file)
+# 这个是重度“借鉴”了torch的quickstart的代码，自己的数据集
+class image_dataset(data.Dataset):
+    def __init__(self, img_dir: str, annotations_file_path: str): # 初始化一些参数
         self.img_dir = img_dir
-        self.transform = transform
-        self.target_transform = target_transform
+        self.img_labels = pd.read_csv(annotations_file_path, header=0)
+        self.transform = nn.Flatten()
 
     def __len__(self):
         return len(self.img_labels)
 
     def __getitem__(self, idx):
         img_path = os.path.join(self.img_dir, self.img_labels.iloc[idx, 0])
-        image = read_image(img_path)
+        image: torch.Tensor = read_image(img_path)
         label = self.img_labels.iloc[idx, 1]
-        if self.transform:
-            image = self.transform(image)
-        if self.target_transform:
-            label = self.target_transform(label)
+        image = self.transform(image)
+        image = image.float()
         return image, label
-
 
 
 # 识别
 class Provinces_Recognition(nn.Module): # 省份识别
-    def __init__(self):
+    def __init__(self, input_size: int, output_size: int):
         super(Provinces_Recognition, self).__init__()
         self.flatten = nn.Flatten()
-        self.pipeline = nn.sequential(
-            nn.Linear(90 * 30, 256),
+        self.pipeline = nn.Sequential(
+            nn.Linear(input_size, 256),
             nn.ReLU(),
             nn.Linear(256, 128),
             nn.ReLU(),
             nn.Linear(128, 64),
             nn.ReLU(),
-            nn.Linear(64, 34),
+            nn.Linear(64, output_size), 
             nn.ReLU()
         )
     
@@ -68,45 +64,6 @@ class Provinces_Recognition(nn.Module): # 省份识别
         x = self.pipeline(x)
         return x
 
-class alphabets_Recognition(nn.Module): # 字母识别
-    def __init__(self):
-        super(Provinces_Recognition, self).__init__()
-        self.flatten = nn.Flatten()
-        self.pipeline = nn.sequential(
-            nn.Linear(90 * 30, 256),
-            nn.ReLU(),
-            nn.Linear(256, 128),
-            nn.ReLU(),
-            nn.Linear(128, 64),
-            nn.ReLU(),
-            nn.Linear(64, 25),
-            nn.ReLU()
-        )
-    
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        x = self.flatten(x)
-        x = self.pipeline(x)
-        return x
-    
-class ads_Recognition(nn.Module): # 后六个字符识别
-    def __init__(self):
-        super(Provinces_Recognition, self).__init__()
-        self.flatten = nn.Flatten()
-        self.pipeline = nn.sequential(
-            nn.Linear(90 * 30, 256),
-            nn.ReLU(),
-            nn.Linear(256, 128),
-            nn.ReLU(),
-            nn.Linear(128, 64),
-            nn.ReLU(),
-            nn.Linear(64, 35),
-            nn.ReLU()
-        )
-    
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        x = self.flatten(x)
-        x = self.pipeline(x)
-        return x
 
 # 这个是重度“借鉴”了torch的quickstart的代码
 def train(dataloader: data.DataLoader, model: nn.Module, loss_fn, optimizer: torch.optim.Optimizer):
@@ -127,11 +84,28 @@ def train(dataloader: data.DataLoader, model: nn.Module, loss_fn, optimizer: tor
         loss.backward() # 反向传播
         optimizer.step() # 更新参数
 
-        if batch % 100 == 0: # 每100个batch打印一次
+        if batch % 10 == 0: # 每100个batch打印一次
             loss, current = loss.item(), batch * len(X) # 获取损失和当前的batch数
             print(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]") # 打印损失和当前的batch数
     
     model.eval() # 将当前model恢复为测试模式
+
+def training_driver(image_dir: str, annotations_file_path: str, label_count: int, image_size: int = 2700, epoch: int = 1) -> nn.Module: # 训练主函数
+    # 初始化数据集
+    dataset = image_dataset(image_dir, annotations_file_path)
+    # 初始化数据集的迭代器
+    data_loader = data.DataLoader(dataset, batch_size=32, shuffle=True)
+    # 初始化网络
+    net = Provinces_Recognition(image_size, label_count)
+    # 初始化优化器
+    optimizer = torch.optim.Adam(net.parameters(), lr=0.001)
+    # 初始化损失函数
+    loss_func = nn.CrossEntropyLoss() # 先用着交叉熵
+    # 训练
+    for e in range(epoch): # 训练十轮
+        train(data_loader, net, loss_func, optimizer)
+    
+    return net
 
 
 # 这个是重度“借鉴”了torch的quickstart的代码，单轮测试
@@ -152,10 +126,34 @@ def test(dataloader: data.DataLoader, model: nn.Module, loss_fn):
     correct /= size
     print(f"Test Error: \n Accuracy: {(100*correct):>0.1f}%, Avg loss: {test_loss:>8f} \n")
 
+def test_driver(image_dir:str, annotations_file_path: str, label_count: int, model: nn.Module) -> None: # 测试主函数
+    # 初始化数据集
+    dataset = image_dataset(image_dir, annotations_file_path)
+    # 初始化数据集的迭代器
+    data_loader = data.DataLoader(dataset, batch_size=32, shuffle=True)
+    # 初始化损失函数
+    loss_func = nn.CrossEntropyLoss() # 先用着交叉熵
+    # 测试
+    test(data_loader, model, loss_func)
 
+
+# 模块测试
 def module_test():
-    image_path: str = "Data/train/015-91_91-282&460_498&530-496&530_282&526_282&460_498&466-0_0_3_27_29_25_30_33-149-96.jpg"
-    image: cv2.Mat = segmentation.pipeline(image_path)
-    character_images: list = character_extraction.pipeline(image, True)
+    # 初始化模型
+    # 省份
+    province_net = training_driver("./Real_data/train/provinces", "./Real_data/train/provinces.csv", 34)
+    # 字母
+    alphabets_net = training_driver("./Real_data/train/alphabets", "./Real_data/train/alphabets.csv", 25)
+    # 字符
+    characters_net = training_driver("./Real_data/train/ads", "./Real_data/train/ads.csv", 35)
+
+    # 测试
+    test_driver("./Real_data/test/provinces", "./Real_data/test/provinces.csv", 34, province_net) # 省份
+    test_driver("./Real_data/test/alphabets", "./Real_data/test/alphabets.csv", 25, alphabets_net) # 字母
+    test_driver("./Real_data/test/ads", "./Real_data/test/ads.csv", 35, characters_net) # 字符
+
+module_test()
+
+    
 
 

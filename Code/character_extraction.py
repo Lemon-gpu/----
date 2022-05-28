@@ -104,7 +104,7 @@ def transform_all_images(images: list) -> list:
     
     return result
 
-def test():
+def module_test():
     image = segmentation.pipeline("Data/train/015-91_91-282&460_498&530-496&530_282&526_282&460_498&466-0_0_3_27_29_25_30_33-149-96.jpg")
     cv2.imshow("image", image)
     cv2.waitKey(0)
