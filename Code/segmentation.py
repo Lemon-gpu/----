@@ -1,3 +1,4 @@
+from asyncio.windows_utils import pipe
 from typing import Tuple
 import cv2
 import numpy as np
@@ -30,11 +31,7 @@ def get_image(image_path: str) -> cv2.Mat: #获取图片
     return image
 
 def module_test():
-    image_path = 'Data\\train\\015-91_91-282&460_498&530-496&530_282&526_282&460_498&466-0_0_3_27_29_25_30_33-149-96.jpg'
-    image = get_image(image_path)
-    license_plate = get_license_plate(image, image_path)
-    cv2.imshow('test', license_plate)
-    cv2.waitKey(0)
+    pipeline("Data/train/015-91_91-282&460_498&530-496&530_282&526_282&460_498&466-0_0_3_27_29_25_30_33-149-96.jpg", True)
 
 def pipeline(image_path: str, show_image: bool = False) -> cv2.Mat: #整个流水线，输出的车牌都是150*450的。阅读函数的话可以从这里开始
     image = get_image(image_path)

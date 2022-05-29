@@ -93,7 +93,7 @@ def data_preprocess(img_dir: str, save_dir: str) -> None: # 图片预处理，�
 def module_test():
     img_dir = 'Data/val'
     save_dir = 'Real_data/val'
-    data_preprocess(img_dir, save_dir)
+    pipeline(img_dir, save_dir)
     print("done")
 
 def pipeline(img_dir, save_dir):

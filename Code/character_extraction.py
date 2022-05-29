@@ -106,18 +106,7 @@ def transform_all_images(images: list) -> list:
 
 def module_test():
     image = segmentation.pipeline("Data/train/015-91_91-282&460_498&530-496&530_282&526_282&460_498&466-0_0_3_27_29_25_30_33-149-96.jpg")
-    cv2.imshow("image", image)
-    cv2.waitKey(0)
-
-    image = thresholding_image(image)
-    cv2.imshow("image", image)
-    cv2.waitKey(0)
-
-    images = vertical_cutout(horizontal_cutout(image)[0])
-    images = transform_all_images(images)
-    for i in images:
-        cv2.imshow("image", i)
-        cv2.waitKey(0)
+    pipeline(image, True)
 
 def pipeline(image: cv2.Mat, show_image: bool = False) -> list: # 处理管线，输出的字符都是30*90的。了解函数的话可以从这里开始，如果有啥不明白的还装了copilot的话，可以打个井号看收敛出来的注释
     threshold_image = thresholding_image(image)
