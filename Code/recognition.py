@@ -54,9 +54,8 @@ class image_dataset(data.Dataset):
         label = label.float()
         return image, label
 
-
 # 识别
-class Recognition(nn.Module): # 省份识别
+class Recognition(nn.Module): # 识别
     def __init__(self, input_size: int, output_size: int):
         super(Recognition, self).__init__()
         self.input_size = input_size
@@ -76,7 +75,6 @@ class Recognition(nn.Module): # 省份识别
             x = x.view(-1, self.input_size)
         x = self.pipeline(x)
         return x
-
 
 # 这个是重度“借鉴”了torch的quickstart的代码
 def train(dataloader: data.DataLoader, model: nn.Module, loss_fn, optimizer: torch.optim.Optimizer):
@@ -121,7 +119,6 @@ def training_driver(image_dir: str, annotations_file_path: str, label_count: int
     
     return net
 
-
 # 这个是重度“借鉴”了torch的quickstart的代码，单轮测试
 def test(dataloader: data.DataLoader, model: nn.Module, loss_fn):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu") # 判断是否有GPU
@@ -153,7 +150,6 @@ def test_driver(image_dir:str, annotations_file_path: str, label_count: int, mod
     # 测试
     test(data_loader, model, loss_func)
 
-
 # 模块测试
 def module_init():
     # 初始化模型
@@ -177,9 +173,9 @@ def module_init():
 def pipeline(image_dir: str, show_result: bool = False) -> str: # 流水线函数
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu") # 判断是否有GPU
     # 初始化模型
-    provinces_net: Recognition= torch.load("./Real_data/model/provinces.pth") # 省份
-    alphabets_net: Recognition = torch.load("./Real_data/model/alphabets.pth") # 字母
-    characters_net: Recognition = torch.load("./Real_data/model/ads.pth") # 字符
+    provinces_net: Recognition= torch.load("./Real_data/model/provinces.pth", device) # 省份
+    alphabets_net: Recognition = torch.load("./Real_data/model/alphabets.pth", device) # 字母
+    characters_net: Recognition = torch.load("./Real_data/model/ads.pth", device) # 字符
 
     # 分割字符
     image = segmentation.pipeline(image_dir)
@@ -206,7 +202,7 @@ def pipeline(image_dir: str, show_result: bool = False) -> str: # 流水线函�
 def module_test(init: bool = True):
     if init:
         module_init()
-    pipeline("Data\\val\\06671875-92_256-133&416_560&574-560&574_155&536_133&416_551&439-0_0_3_24_27_31_27_30-197-380.jpg", True)
+    pipeline("Data\\test\\025-90_267-216&444_477&531-472&526_216&531_220&446_477&444-0_0_3_26_24_24_32_32-128-98.jpg", True)
 
 module_test(False)
 
