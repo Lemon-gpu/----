@@ -178,8 +178,8 @@ def pipeline(image_dir: str, show_result: bool = False) -> str: # 流水线函�
     characters_net: Recognition = torch.load("./Real_data/model/ads.pth", device) # 字符
 
     # 分割字符
-    image = segmentation.pipeline(image_dir)
-    characters_images = character_extraction.pipeline(image)
+    image = segmentation.pipeline(image_dir, True)
+    characters_images = character_extraction.pipeline(image, True)
     province = torch.from_numpy(characters_images[0][0]).float().to(device)
     alphabet = torch.from_numpy(characters_images[1][0]).float().to(device)
     characters = characters_images[2][0]
